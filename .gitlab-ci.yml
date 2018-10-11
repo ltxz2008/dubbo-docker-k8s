@@ -84,7 +84,7 @@ runing-docker:buildpush:
  tags:
   - ubunt-docker
  only:
-  - developer
+  - master
  image: maven:3-jdk-8
  when: manual
  
