@@ -80,6 +80,7 @@ runing-docker:buildpush:
   - ssh gitlab-runner@gke-cluster-1 "sudo docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD}"
   - ls -l /
   - pwd
+  - ls service-consumer/target
   - ls ~/.m2 -l
   - scp $(ls service-consumer/target/*.jar|egrep "*(SNAPSHOT|RELEASE).jar") gitlab-runner@gke-cluster-1:/home/gitlab-runner/consumer/docker-consumer.jar
   - scp $(ls service-producer/target/*.jar|egrep "*(SNAPSHOT|RELEASE).jar") gitlab-runner@gke-cluster-1:/home/gitlab-runner/producer/docker-producer.jar
