@@ -71,6 +71,7 @@ build-docker:build-consumer:
   - docker build -t consumer .
  tags:
   - ubunt-docker
+ image: maven:3-jdk-8
   
   
  
