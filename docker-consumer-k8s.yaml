@@ -32,7 +32,7 @@ spec:
       containers:
       - name: docker-consumer
         imagePullPolicy: Always
-        image: dockeryanxiao/docker-dubbo-producer:master
+        image: dockeryanxiao/docker-dubbo-consumer:master
         ports:
         - containerPort: 12345
         env:
