@@ -69,6 +69,8 @@ build-docker:build-consumer:
   - cd service-consumer
   - mvn package
   - docker build -t consumer .
+ tags:
+  - ubunt-docker
 runing-docker:buildpush:
  stage: running
  script:
