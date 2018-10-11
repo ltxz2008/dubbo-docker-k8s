@@ -84,6 +84,7 @@ runing-docker:buildpush:
   - scp service-producer/Dockerfile gitlab-runner@gke-cluster-1:/home/gitlab-runner/producer/
   - scp service-consumer/Dockerfile gitlab-runner@gke-cluster-1:/home/gitlab-runner/consumer/
   - ssh gitlab-runner@gke-cluster-1 "sudo  docker build -t dockeryanxiao/docker-dubbo-producer:$CI_COMMIT_REF_SLUG /home/gitlab-runner/producer"
+  - ssh gitlab-runner@gke-cluster-1 "sudo  docker build -t dockeryanxiao/docker-dubbo-consumer:$CI_COMMIT_REF_SLUG /home/gitlab-runner/consumer"
   - ssh gitlab-runner@gke-cluster-1 "sudo docker push dockeryanxiao/docker-dubbo-producer:$CI_COMMIT_REF_SLUG"
   - ssh gitlab-runner@gke-cluster-1 "sudo docker push dockeryanxiao/docker-dubbo-consumer:$CI_COMMIT_REF_SLUG"
  tags:
