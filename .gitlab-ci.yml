@@ -39,6 +39,7 @@ cache:
     - .m2/repository
 stages:
  - build
+ - build-consumer
  - running
  - deploy-k8s
  - update-k8s
@@ -62,6 +63,12 @@ validate:jdk8:
 
     
 ####################docker build##################
+build-docker:build-consumer:
+ stage: build-consumer
+ script:
+  - cd service-consumer
+  - mvn package
+  - docker build -t consumer .
 runing-docker:buildpush:
  stage: running
  script:
