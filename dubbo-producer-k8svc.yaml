@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-producer-svc-test
+  labels:
+    app: docker-producer-svc-test
+spec:
+  ports:
+  - port: 12345
+    name: server
+  type: NodePort
+  selector:
+    app: docker-producer-svc-test
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: docker-producer-svc-test
+spec:
+  replicas: 1
+  selector:
+   matchLabels:
+    app: ddocker-producer-svc-test
+  template:
+    metadata:
+      labels:
+        app: docker-producer-svc-test
+    spec:
+      nodeSelector:
+        zk: zk-3
+      containers:
+      - name: docker-producer
+        imagePullPolicy: Always
+        image: dockeryanxiao/docker-dubbo-producer:master
+        ports:
+        - containerPort: 12345
+        env:
+        - name: dubbo.registry.address
+          value: zookeeper://zk-2-svc:2181
