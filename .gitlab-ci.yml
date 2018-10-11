@@ -66,6 +66,9 @@ validate:jdk8:
 build-docker:build-consumer:
  stage: build-consumer
  script:
+  - cd service-producer
+  - mvn package
+  - docker build -t producer .
   - cd service-consumer
   - mvn package
   - docker build -t consumer .
