@@ -1,3 +1,26 @@
+before_script:
+  # Install ssh-agent if not already installed, it is required by Docker.
+  # (change apt-get to yum if you use a CentOS-based image)
+  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+
+  # Run ssh-agent (inside the build environment)
+  - eval $(ssh-agent -s)
+
+  # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+  - ssh-add <(echo "$SSH_PRIVATE_KEY")
+
+  # For Docker builds disable host key checking. Be aware that by adding that
+  # you are suspectible to man-in-the-middle attacks.
+  # WARNING: Use this only with the Docker executor, if you use it with shell
+  # you will overwrite your user's SSH config.
+  - mkdir -p ~/.ssh
+  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  # In order to properly check the server's host key, assuming you created the
+  # SSH_SERVER_HOSTKEYS variable previously, uncomment the following two lines
+  # instead.
+  # - mkdir -p ~/.ssh
+  # - '[[ -f /.dockerenv ]] && echo "$SSH_SERVER_HOSTKEYS" > ~/.ssh/known_hosts'
+ 
 
 
 variables:
@@ -14,7 +37,11 @@ variables:
 cache:
   paths:
     - .m2/repository
-
+stages:
+ - build
+ - running
+ - deploy-k8s
+ - update-k8s
 # This will only validate and compile stuff and run e.g. maven-enforcer-plugin.
 # Because some enforcer rules might check dependency convergence and class duplications
 # we use `test-compile` here instead of `validate`, so the correct classpath is picked up.
@@ -23,66 +50,77 @@ cache:
   script:
     - 'mvn $MAVEN_CLI_OPTS test-compile'
 
-# For merge requests do not `deploy` but only run `verify`.
-# See https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html
-.verify: &verify
-  stage: test
-  script:
-    - 'mvn $MAVEN_CLI_OPTS verify site site:stage'
-  except:
-    - master
 
-# Validate merge requests using JDK7
-validate:jdk7:
-  <<: *validate
-  image: maven:3.3.9-jdk-7
-
-# Validate merge requests using JDK8
 validate:jdk8:
   <<: *validate
   image: maven:3.3.9-jdk-8
-
-# Verify merge requests using JDK7
-verify:jdk7:
-  <<: *verify
-  image: maven:3.3.9-jdk-7
-
-# Verify merge requests using JDK8
-verify:jdk8:
-  <<: *verify
-  image: maven:3.3.9-jdk-8
+  tags:
+   - ubunt-docker
+  variables:
+   CI_DEBUG_TRACE: "true"
 
 
-# For `master` branch run `mvn deploy` automatically.
-# Here you need to decide whether you want to use JDK7 or 8.
-# To get this working you need to define a volume while configuring your gitlab-ci-multi-runner.
-# Mount your `settings.xml` as `/root/.m2/settings.xml` which holds your secrets.
-# See https://maven.apache.org/settings.html
-deploy:jdk8:
-  # Use stage test here, so the pages job may later pickup the created site.
-  stage: test
-  script:
-    - 'mvn $MAVEN_CLI_OPTS deploy site site:stage'
-  only:
-    - master
-  # Archive up the built documentation site.
-  artifacts:
-    paths:
-    - target/staging
-  image: maven:3.3.9-jdk-8
+    
+####################docker build##################
+runing-docker:buildpush:
+ stage: running
+ script:
+  ##docker login
+  - ssh gitlab-runner@gke-cluster-1 "sudo docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD}"
+  - ssh gitlab-runner@gke-cluster-1 "sudo  docker build -t dockeryanxiao/docker-dubbo:$CI_COMMIT_REF_SLUG ."
+  - ssh gitlab-runner@gke-cluster-1 "sudo docker push dockeryanxiao/docker-dubbo:$CI_COMMIT_REF_SLUG"
+ tags:
+  - ubunt-docker
+ only:
+  - developer
+ image: maven:3-jdk-8
+ when: manual
+ 
+runing-k8s:deploy:
+ stage: deploy-k8s
+ script:
+  - apt-get update && apt-get install sudo curl lsb-release gnupg -y
+   # Create environment variable for correct distribution
+  - export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
+   # Add the Cloud SDK distribution URI as a package source
+  - echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+   # Import the Google Cloud Platform public key
+  - curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+   # Update the package list and install the Cloud SDK
+  - apt-get update && apt-get install google-cloud-sdk -y
+#  - gcloud components install kubectl
+  - apt-get install kubectl
+  - gcloud init --console-only
+  - echo "${GCLOUDKEY}" >gcloud-temp.json
+  - gcloud auth activate-service-account --key-file=gcloud-temp.json
+  - gcloud container clusters get-credentials cluster-1 --zone us-central1-a --project nimble-sylph-214302
+  - kubectl apply -f dubbo-consumer-k8svc.yaml
+ tags:
+  - k8s-1
+ image: ubuntu:18.04
+ when: manual
 
+runing-k8s:update:
+ stage: update-k8s
+ script:
+  - apt-get update && apt-get install sudo curl lsb-release gnupg -y
+   # Create environment variable for correct distribution
+  - export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
+   # Add the Cloud SDK distribution URI as a package source
+  - echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+   # Import the Google Cloud Platform public key
+  - curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+   # Update the package list and install the Cloud SDK
+  - apt-get update && apt-get install google-cloud-sdk -y
+#  - gcloud components install kubectl
+  - apt-get install kubectl
+  - gcloud init --console-only
+  - echo "${GCLOUDKEY}" >gcloud-temp.json
+  - gcloud auth activate-service-account --key-file=gcloud-temp.json
+  - gcloud container clusters get-credentials cluster-1 --zone us-central1-a --project nimble-sylph-214302
+  - kubectl set image deployment/dubbo-spring-consumer-test dubbo-spring-consumer=dockeryanxiao/dubbo-consumer-test:$CI_COMMIT_REF_SLUG
+ tags:
+  - k8s-2
+ image: ubuntu:18.04
+ when: manual
 
-pages:
-  image: busybox:latest
-  stage: deploy
-  script:
-    # Because Maven appends the artifactId automatically to the staging path if you did define a parent pom,
-    # you might need to use `mv target/staging/YOUR_ARTIFACT_ID public` instead.
-    - mv target/staging public
-  dependencies:
-    - deploy:jdk8
-  artifacts:
-    paths:
-    - public
-  only:
-    - master
