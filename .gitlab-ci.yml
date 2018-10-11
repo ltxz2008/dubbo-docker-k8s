@@ -71,6 +71,9 @@ build-docker:build-consumer:
   - docker build -t consumer .
  tags:
   - ubunt-docker
+  
+  
+ 
 runing-docker:buildpush:
  stage: running
  script:
