@@ -21,7 +21,7 @@ spec:
   replicas: 1
   selector:
    matchLabels:
-    app: ddocker-producer-svc-test
+    app: docker-producer-svc-test
   template:
     metadata:
       labels:
