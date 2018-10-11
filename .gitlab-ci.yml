@@ -78,9 +78,10 @@ runing-docker:buildpush:
  script:
   ##docker login
   - ssh gitlab-runner@gke-cluster-1 "sudo docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD}"
-  - scp $(ls dubbo-docker-k8s/service-consumer/target/*.jar|egrep "*(SNAPSHOT|RELEASE).jar") gitlab-runner@gke-cluster-1:/home/gitlab-runner/consumer/docker-consumer.jar
-  - scp $(ls dubbo-docker-k8s/service-producer/target/*.jar|egrep "*(SNAPSHOT|RELEASE).jar") gitlab-runner@gke-cluster-1:/home/gitlab-runner/producer/docker-producer.jar
-  - ssh gitlab-runner@gke-cluster-1 "sudo  docker build -t dockeryanxiao/docker-dubbo:$CI_COMMIT_REF_SLUG ."
+  - scp $(ls service-consumer/target/*.jar|egrep "*(SNAPSHOT|RELEASE).jar") gitlab-runner@gke-cluster-1:/home/gitlab-runner/consumer/docker-consumer.jar
+  - scp $(ls service-producer/target/*.jar|egrep "*(SNAPSHOT|RELEASE).jar") gitlab-runner@gke-cluster-1:/home/gitlab-runner/producer/docker-producer.jar
+  - scp service-producer/Dockerfile gitlab-runner@gke-cluster-1:/home/gitlab-runner/producer/
+  - ssh gitlab-runner@gke-cluster-1 "sudo  docker build -t dockeryanxiao/docker-dubbo-producer:$CI_COMMIT_REF_SLUG /home/gitlab-runner/producer"
   - ssh gitlab-runner@gke-cluster-1 "sudo docker push dockeryanxiao/docker-dubbo:$CI_COMMIT_REF_SLUG"
  tags:
   - ubunt-docker
