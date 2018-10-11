@@ -36,5 +36,5 @@ spec:
         ports:
         - containerPort: 12345
         env:
-        - name: dubbo.registry.address
+        - name: ZOOKEEPER_SERVER
           value: zookeeper://zk-2-svc:2181
