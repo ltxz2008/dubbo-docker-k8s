@@ -32,9 +32,9 @@ spec:
       containers:
       - name: docker-consumer
         imagePullPolicy: Always
-        image: dockeryanxiao/dubbo-consumer-test:developer
+        image: dockeryanxiao/docker-dubbo-producer:$CI_COMMIT_REF_SLUG
         ports:
         - containerPort: 12345
-#        env:
-#        - name: dubbo.registry.address
-#          value: zookeeper://zk-2-svc:2181
+        env:
+        - name: dubbo.registry.address
+          value: zookeeper://zk-2-svc:2181
