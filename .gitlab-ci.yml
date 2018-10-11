@@ -67,12 +67,6 @@ build-docker:build-consumer:
  stage: build-consumer
  script:
   - mvn clean install
-  - cd service-producer
-  - mvn package
-  - docker build -t producer .
-  - cd service-consumer
-  - mvn package
-  - docker build -t consumer .
  tags:
   - ubunt-docker
  image: maven:3-jdk-8
@@ -84,6 +78,7 @@ runing-docker:buildpush:
  script:
   ##docker login
   - ssh gitlab-runner@gke-cluster-1 "sudo docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD}"
+  - scp $(ls dubbo-docker-k8s/*/target/*.jar|egrep "*(SNAPSHOT|RELEASE).jar") gitlab-runner@gke-cluster-1:/home/gitlab-runner/
   - ssh gitlab-runner@gke-cluster-1 "sudo  docker build -t dockeryanxiao/docker-dubbo:$CI_COMMIT_REF_SLUG ."
   - ssh gitlab-runner@gke-cluster-1 "sudo docker push dockeryanxiao/docker-dubbo:$CI_COMMIT_REF_SLUG"
  tags:
