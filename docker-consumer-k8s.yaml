@@ -38,7 +38,7 @@ spec:
       - name: docker-consumer
         imagePullPolicy: Always
         image: dockeryanxiao/docker-dubbo-consumer:master
-        resource:
+        resources:
          limits:
           cpu: "0.2"
           memory: "300Mi"
