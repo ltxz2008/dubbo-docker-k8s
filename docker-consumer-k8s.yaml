@@ -46,4 +46,4 @@ spec:
         - containerPort: 12345
         env:
         - name: ZOOKEEPER_SERVER
-          value: zookeeper://zk-2-svc:2181
+          value: zookeeper://zk-2-svc
