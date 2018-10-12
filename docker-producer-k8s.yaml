@@ -39,7 +39,7 @@ spec:
         imagePullPolicy: Always
         image: dockeryanxiao/docker-dubbo-producer:master
         resources:
-         limit:
+         limits:
           cpu: "0.2"
           memory: "300Mi"
         ports:
