@@ -27,12 +27,21 @@ spec:
       labels:
         app: docker-producer-svc-test
     spec:
-      nodeSelector:
-        zk: zk-3
+      tolerations:
+      - key: "key"
+        operator: "Equal"
+        value: "value"
+        effect: "NoSchedule"
+#      nodeSelector:
+#        zk: zk-3
       containers:
       - name: docker-producer
         imagePullPolicy: Always
         image: dockeryanxiao/docker-dubbo-producer:master
+        resources:
+         limit:
+          cpu: "0.2"
+          memory: "300Mi"
         ports:
         - containerPort: 12345
         env:
